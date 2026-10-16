@@ -135,17 +135,20 @@ function noEncontrado(){
 
 function mostrar(doc, k){
   document.getElementById("titulo").textContent = "Validación de " + doc.tipo;
-  document.getElementById("subtitulo").textContent =
-    "Esta pantalla verifica la autenticidad de la " + doc.tipo.toLowerCase() + " oficial emitida por Grupo LEAN.";
+  const art = doc.tipo === "Recibo" ? "del recibo oficial emitido" : "de la cotización oficial emitida";
+  document.getElementById("subtitulo").textContent = "Esta pantalla verifica la autenticidad " + art + " por Grupo LEAN.";
   let filas = [["N° de documento", doc.numero],["Cliente", doc.cliente]];
-  if(doc.cotizacion) filas.push(["Cotización", doc.cotizacion]);
-  filas.push(["Concepto", doc.descripcion],["Fecha de emisión", fmtISO(doc.fecha)]);
+  if(doc.ruc) filas.push(["CIP/RUC", doc.ruc]);
+  if(doc.cotizacion) filas.push(["Cotización N.º", doc.cotizacion]);
+  if(doc.descripcion) filas.push(["Concepto", doc.descripcion]);
+  filas.push(["Fecha de emisión", fmtISO(doc.fecha)]);
   if(doc.tipo === "Cotización"){
-    filas.push(["Válida hasta", fmtISO(doc.validoHasta)]);
-    if(new Date() > new Date(doc.validoHasta+"T23:59:59-05:00")) setEstado("p-warn", ICON_WARN, "Auténtica · Vencida");
+    if(doc.validoHasta) filas.push(["Válida hasta", fmtISO(doc.validoHasta)]);
+    if(doc.validoHasta && new Date() > new Date(doc.validoHasta+"T23:59:59-05:00")) setEstado("p-warn", ICON_WARN, "Auténtica · Vencida");
     else setEstado("p-ok", ICON_OK, "Documento Verificado");
   } else {
-    filas.push(["Estado de pago", doc.estado || "—"]);
+    if(doc.vence) filas.push(["Fecha de vencimiento", fmtISO(doc.vence)]);
+    if(doc.estado) filas.push(["Estado de pago", doc.estado]);
     setEstado("p-ok", ICON_OK, "Documento Verificado");
   }
   (doc.desglose||[]).forEach(([a,v]) => filas.push([a, money(v)]));
