@@ -157,19 +157,25 @@ function mostrar(doc, k){
     if(doc.estado) filas.push(["Estado de pago", doc.estado]);
     setEstado("p-ok", ICON_OK, "Documento Verificado");
   }
+  if(doc.anulado){   // documento anulado por Grupo LEAN
+    setEstado("p-bad", ICON_BAD, "Documento anulado");
+    filas.push(["Anulado el", fmtISO(doc.anulado.fecha)]);
+    if(doc.anulado.motivo) filas.push(["Motivo", doc.anulado.motivo]);
+  }
   (doc.desglose||[]).forEach(([a,v]) => filas.push([a, money(v)]));
   let html = '<div class="details">' +
     filas.map(([a,v]) => '<div class="row"><span>'+esc(a)+'</span><b>'+esc(v)+'</b></div>').join("") +
     '<div class="row total"><span>Total</span><b>'+money(doc.total)+'</b></div>' +
     (doc.saldo!=null ? '<div class="row"><span>Saldo pendiente</span><b>'+money(doc.saldo)+'</b></div>' : '') + '</div>';
-  if(doc.pdf){
+  if(doc.anulado) html += '<p class="note" style="color:#b91c1c;font-weight:700">Este documento fue anulado por Grupo LEAN y no tiene validez.</p>';
+  if(doc.pdf && !doc.anulado){
     html += '<div class="pdfbox"><p>El documento PDF está listo para ser visualizado</p>' +
       '<button class="btn b-open" id="abrir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14 21 3"/></svg>Abrir PDF</button>' +
       '<button class="btn b-dl" id="bajar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Descargar</button></div>';
   }
-  html += '<p class="note">Si los datos mostrados no coinciden con el documento que tiene en mano, no lo considere válido y contáctenos.</p>';
+  if(!doc.anulado) html += '<p class="note">Si los datos mostrados no coinciden con el documento que tiene en mano, no lo considere válido y contáctenos.</p>';
   cont.innerHTML = html;
-  if(doc.pdf){
+  if(doc.pdf && !doc.anulado){
     let url=null;
     const obtener = async () => {
       if(url) return url;
