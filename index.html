@@ -140,7 +140,8 @@ function noEncontrado(){
 
 function mostrar(doc, k){
   document.getElementById("titulo").textContent = "Validación de " + doc.tipo;
-  const art = doc.tipo === "Recibo" ? "del recibo oficial emitido" : "de la cotización oficial emitida";
+  // Recibos y facturas: «recibo oficial» por ahora (sin RUC aún). Cuando haya RUC, la Factura podrá decir «de la factura oficial emitida».
+  const art = doc.tipo === "Cotización" ? "de la cotización oficial emitida" : "del recibo oficial emitido";
   document.getElementById("subtitulo").textContent = "Esta pantalla verifica la autenticidad " + art + " por Grupo LEAN.";
   let filas = [["N° de documento", doc.numero],["Cliente", doc.cliente]];
   if(doc.ruc) filas.push(["CIP/RUC", doc.ruc]);
