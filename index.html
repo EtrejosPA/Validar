@@ -94,7 +94,7 @@ const EMPRESA = {
 <main>
   <div class="card">
     <h1 id="titulo">Validación de Documentos</h1>
-    <p class="sub" id="subtitulo">Esta pantalla verifica la autenticidad de los documentos emitidos por Grupo LEAN.</p>
+    <p class="sub" id="subtitulo">Esta pantalla verifica la autenticidad de los documentos emitidos por Grupo Σ LEAN.</p>
 
     <div class="pills">
       <div class="pill p-date">
@@ -159,7 +159,7 @@ const descifrar = (key, iv, ct) => crypto.subtle.decrypt({name:"AES-GCM", iv}, k
 function noEncontrado(){
   setEstado("p-bad", ICON_BAD, codigo ? "Documento no encontrado" : "Sin código de validación");
   cont.innerHTML = '<p class="note">'+(codigo
-    ? "El código <b>"+esc(codigo)+"</b> no corresponde a ningún documento emitido por Grupo LEAN. Si recibió este documento, comuníquese con nosotros para confirmarlo."
+    ? "El código <b>"+esc(codigo)+"</b> no corresponde a ningún documento emitido por Grupo Σ LEAN. Si recibió este documento, comuníquese con nosotros para confirmarlo."
     : "Escanee el código QR que aparece en su cotización o recibo para verificar su autenticidad.")+"</p>";
 }
 
@@ -167,7 +167,7 @@ function mostrar(doc, k){
   document.getElementById("titulo").textContent = "Validación de " + doc.tipo;
   // Recibos y facturas: «recibo oficial» por ahora (sin RUC aún). Cuando haya RUC, la Factura podrá decir «de la factura oficial emitida».
   const art = doc.tipo === "Cotización" ? "de la cotización oficial emitida" : "del recibo oficial emitido";
-  document.getElementById("subtitulo").textContent = "Esta pantalla verifica la autenticidad " + art + " por Grupo LEAN.";
+  document.getElementById("subtitulo").textContent = "Esta pantalla verifica la autenticidad " + art + " por Grupo Σ LEAN.";
   let filas = [["N° de documento", doc.numero],["Cliente", doc.cliente]];
   if(doc.ruc) filas.push(["CIP/RUC", doc.ruc]);
   if(doc.cotizacion) filas.push(["Cotización N.º", doc.cotizacion]);
@@ -192,7 +192,7 @@ function mostrar(doc, k){
     filas.map(([a,v]) => '<div class="row"><span>'+esc(a)+'</span><b>'+esc(v)+'</b></div>').join("") +
     '<div class="row total"><span>Total</span><b>'+money(doc.total)+'</b></div>' +
     (doc.saldo!=null ? '<div class="row"><span>Saldo pendiente</span><b>'+money(doc.saldo)+'</b></div>' : '') + '</div>';
-  if(doc.anulado) html += '<p class="note" style="color:#b91c1c;font-weight:700">Este documento fue anulado por Grupo LEAN y no tiene validez.</p>';
+  if(doc.anulado) html += '<p class="note" style="color:#b91c1c;font-weight:700">Este documento fue anulado por Grupo Σ LEAN y no tiene validez.</p>';
   if(doc.pdf && !doc.anulado){
     html += '<div class="pdfbox"><p>El documento PDF está listo para ser visualizado</p>' +
       '<button class="btn b-open" id="abrir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14 21 3"/></svg>Abrir PDF</button>' +
