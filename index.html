@@ -54,6 +54,26 @@
   .note{font-size:13px;color:var(--muted);margin-top:18px;line-height:1.5}
   footer{text-align:center;font-size:12px;color:var(--muted);padding:0 16px 30px;line-height:1.6}
   .hidden{display:none}
+  /* evidencia fotográfica */
+  .fotos{background:var(--panel);border-radius:12px;padding:16px 18px;text-align:left;margin-bottom:18px}
+  .fotos h3{font-size:15px;color:var(--navy);margin-bottom:10px}
+  .f-fila{padding:9px 0;border-bottom:1px solid #E3E7EE}.f-fila:last-child{border-bottom:none}
+  .f-fila p{font-size:14px;margin-bottom:6px}.f-fila a{display:inline-block;margin:0 8px 4px 0;font-weight:700;color:var(--blue);text-decoration:underline;cursor:pointer;font-size:14px}
+  #galeria{position:fixed;inset:0;z-index:50;background:#0B1A33;color:#fff;display:flex;flex-direction:column}
+  #galeria.hidden{display:none}
+  .g-top{display:flex;align-items:center;gap:12px;padding:14px 16px;padding-top:calc(14px + env(safe-area-inset-top))}
+  .g-top b{font-size:16px;flex:1;min-width:0}.g-top small{display:block;font-weight:500;opacity:.75;font-size:13px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .g-btn{background:rgba(255,255,255,.14);color:#fff;border:0;border-radius:10px;padding:10px 14px;font:inherit;font-weight:700;cursor:pointer}
+  .g-vista{flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:pan-y}
+  .g-vista img{max-width:100%;max-height:100%;object-fit:contain;user-select:none;-webkit-user-drag:none;transition:opacity .25s}
+  .g-nav{position:absolute;top:50%;transform:translateY(-50%);width:46px;height:46px;border-radius:50%;border:0;background:rgba(255,255,255,.18);color:#fff;font-size:24px;cursor:pointer}
+  .g-prev{left:10px}.g-next{right:10px}
+  .g-pie{padding:10px 12px calc(14px + env(safe-area-inset-bottom));text-align:center}
+  .g-cont{font-size:14px;font-weight:700;margin-bottom:8px}
+  .g-miniaturas{display:flex;gap:8px;justify-content:center;overflow-x:auto;padding-bottom:4px}
+  .g-miniaturas img{width:58px;height:44px;object-fit:cover;border-radius:6px;opacity:.55;cursor:pointer;border:2px solid transparent;flex:none}
+  .g-miniaturas img.on{opacity:1;border-color:var(--orange)}
+  .g-carga{opacity:.8;font-size:15px}
 </style>
 </head>
 <body>
@@ -93,6 +113,11 @@ const EMPRESA = {
 </main>
 
 <footer id="pie"></footer>
+<div id="galeria" class="hidden" role="dialog" aria-label="Evidencia fotográfica">
+  <div class="g-top"><button class="g-btn" id="g-cerrar">← Volver</button><b id="g-tit">Evidencia fotográfica<small id="g-sub"></small></b><a class="g-btn" id="g-bajar" download>Descargar</a></div>
+  <div class="g-vista" id="g-vista"><span class="g-carga" id="g-carga">Cargando foto…</span><img id="g-img" alt=""><button class="g-nav g-prev" id="g-prev" aria-label="Anterior">‹</button><button class="g-nav g-next" id="g-next" aria-label="Siguiente">›</button></div>
+  <div class="g-pie"><div class="g-cont" id="g-cont"></div><div class="g-miniaturas" id="g-min"></div></div>
+</div>
 
 <script>
 const TZ = "America/Panama";
@@ -173,8 +198,15 @@ function mostrar(doc, k){
       '<button class="btn b-open" id="abrir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14 21 3"/></svg>Abrir PDF</button>' +
       '<button class="btn b-dl" id="bajar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Descargar</button></div>';
   }
+  if(doc.fotos && doc.fotos.length && !doc.anulado){
+    html += '<div class="fotos"><h3>Evidencia fotográfica</h3>' + doc.fotos.map(f => '<div class="f-fila"><p><b>Fila '+f.fila+':</b> '+esc(f.desc||"")+'</p>' +
+      f.ids.map((id,j) => '<a data-f="'+f.fila+'" data-i="'+(j+1)+'">img'+String(j+1).padStart(2,"0")+'</a>').join("") + '</div>').join("") + '</div>';
+  }
   if(!doc.anulado) html += '<p class="note">Si los datos mostrados no coinciden con el documento que tiene en mano, no lo considere válido y contáctenos.</p>';
   cont.innerHTML = html;
+  cont.querySelectorAll(".fotos a").forEach(a => a.onclick = () => abrirGaleria(doc, k, Number(a.dataset.f), Number(a.dataset.i)));
+  const qp = new URLSearchParams(location.search);
+  if(qp.get("f") && doc.fotos && !doc.anulado) abrirGaleria(doc, k, Number(qp.get("f")), Number(qp.get("i")||1), true);
   if(doc.pdf && !doc.anulado){
     let url=null;
     const obtener = async () => {
@@ -187,6 +219,39 @@ function mostrar(doc, k){
     document.getElementById("abrir").onclick = async () => { const w = win(); const u = await obtener(); if(w) w.location = u; else location.href = u; };
     document.getElementById("bajar").onclick = async () => { const a=document.createElement("a"); a.href=await obtener(); a.download=doc.numero+".pdf"; a.click(); };
   }
+}
+
+/* carrusel de fotos (se abre desde los enlaces img01, img02… del PDF o de esta página) */
+const FOTOS = {};
+async function foto(k, id){
+  if(FOTOS[id]) return FOTOS[id];
+  const r = await fetch("data/"+k.id+"-"+id+".bin"); if(!r.ok) throw new Error("no encontrada");
+  const buf = new Uint8Array(await r.arrayBuffer());
+  return FOTOS[id] = URL.createObjectURL(new Blob([await descifrar(k.key, buf.slice(0,12), buf.slice(12))], {type:"image/jpeg"}));
+}
+function abrirGaleria(doc, k, fila, i, desdeEnlace){
+  const f = doc.fotos.find(x => x.fila===fila) || doc.fotos[0]; if(!f) return;
+  let pos = Math.min(Math.max(1, i||1), f.ids.length) - 1;
+  const g = document.getElementById("galeria"), img = document.getElementById("g-img"), carga = document.getElementById("g-carga");
+  document.getElementById("g-sub").textContent = doc.tipo + " " + doc.numero + " · Fila " + f.fila + (f.desc ? " · " + f.desc : "");
+  const min = document.getElementById("g-min");
+  min.innerHTML = f.ids.map((id,j) => '<img data-j="'+j+'" alt="img'+String(j+1).padStart(2,"0")+'">').join("");
+  min.querySelectorAll("img").forEach(m => { m.onclick = () => ir(Number(m.dataset.j)); foto(k, f.ids[Number(m.dataset.j)]).then(u => m.src = u).catch(() => {}); });
+  async function ir(j){
+    pos = (j + f.ids.length) % f.ids.length; img.style.opacity = 0; carga.textContent = "Cargando foto…"; carga.style.display = "";
+    document.getElementById("g-cont").textContent = "img" + String(pos+1).padStart(2,"0") + " · " + (pos+1) + " de " + f.ids.length;
+    min.querySelectorAll("img").forEach((m,x) => m.classList.toggle("on", x===pos));
+    try{ const u = await foto(k, f.ids[pos]); img.src = u; await img.decode().catch(()=>{}); img.style.opacity = 1; carga.style.display = "none";
+      const a = document.getElementById("g-bajar"); a.href = u; a.download = doc.numero + "_fila" + f.fila + "_img" + String(pos+1).padStart(2,"0") + ".jpg"; }
+    catch(e){ carga.textContent = "No se pudo cargar esta foto."; }
+  }
+  const una = f.ids.length < 2; document.getElementById("g-prev").style.display = document.getElementById("g-next").style.display = una ? "none" : "";
+  document.getElementById("g-prev").onclick = () => ir(pos-1); document.getElementById("g-next").onclick = () => ir(pos+1);
+  document.getElementById("g-cerrar").onclick = () => { g.classList.add("hidden"); document.body.style.overflow = ""; if(desdeEnlace) history.replaceState(null, "", "?c=" + encodeURIComponent(codigo)); };
+  document.onkeydown = e => { if(g.classList.contains("hidden")) return; if(e.key==="ArrowLeft") ir(pos-1); if(e.key==="ArrowRight") ir(pos+1); if(e.key==="Escape") document.getElementById("g-cerrar").click(); };
+  let x0 = null; const v = document.getElementById("g-vista");
+  v.ontouchstart = e => x0 = e.touches[0].clientX; v.ontouchend = e => { if(x0==null) return; const dx = e.changedTouches[0].clientX - x0; if(Math.abs(dx) > 40) ir(pos + (dx < 0 ? 1 : -1)); x0 = null; };
+  g.classList.remove("hidden"); document.body.style.overflow = "hidden"; ir(pos);
 }
 
 (async () => {

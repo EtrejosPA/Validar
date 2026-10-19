@@ -129,7 +129,7 @@
 <footer>Grupo Σ LEAN — Ingeniería & Proyectos</footer>
 
 <script>
-const CFG = { owner:"EtrejosPA", repo:"Validar", branch:"main", site:"https://etrejospa.github.io/Validar/" };
+const CFG = { owner:"GrupoLean", repo:"Validar", branch:"main", site:"https://grupolean.github.io/Validar/" };
 const SALT = "grupolean-validar-v1", ITER = 200000;
 pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
@@ -301,7 +301,7 @@ async function procesar(file){
 
     // QR
     const urls = pages.map(p=>p.qr).filter(Boolean);
-    const codigos = [...new Set(urls.map(u => { const m = u.match(/^https:\/\/etrejospa\.github\.io\/Validar\/\?c=([A-Z0-9-]+)$/i); return m ? m[1].toUpperCase() : null; }))];
+    const codigos = [...new Set(urls.map(u => { const m = u.match(/^https:\/\/(?:etrejospa|grupolean)\.github\.io\/Validar\/\?c=([A-Z0-9-]+)$/i); return m ? m[1].toUpperCase() : null; }))];
     let codigo = null;
     if(!urls.length) checks.push(["x","No se encontró ningún código QR en el PDF. Exporta el PDF desde la plantilla actualizada con el QR visible."]);
     else if(codigos.includes(null)) checks.push(["x","El QR del PDF no lleva al portal de validación (es del formato anterior). Exporta de nuevo desde la plantilla actualizada."]);
