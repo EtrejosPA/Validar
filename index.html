@@ -209,7 +209,7 @@ function mostrar(doc, k){
   if(doc.docs && doc.docs.length && !doc.anulado){
     const ico = n => /\.pdf$/i.test(n) ? "📄" : /\.(xlsx?|csv)$/i.test(n) ? "📊" : "📝";
     const peso = b => !b ? "" : b >= 1048576 ? (b/1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b/1024)) + " KB";
-    html += '<div class="fotos" id="docs"><h3>Documentos anexos</h3>' + doc.docs.map(f => '<div class="f-fila" data-fila="'+f.fila+'"><p><b>Fila '+f.fila+':</b> '+esc(f.desc||"")+'</p>' +
+    html += '<div class="fotos" id="docs"><h3>Anexos</h3>' + doc.docs.map(f => '<div class="f-fila" data-fila="'+f.fila+'"><p><b>Fila '+f.fila+':</b> '+esc(f.desc||"")+'</p>' +
       f.archivos.map((x,j) => '<button class="d-it" data-f="'+f.fila+'" data-j="'+j+'">'+ico(x.nombre)+' <span>'+esc(x.nombre)+'</span><small>'+peso(x.tam)+'</small></button>').join("") + '</div>').join("") + '</div>';
   }
   if(!doc.anulado) html += '<p class="note">Si los datos mostrados no coinciden con el documento que tiene en mano, no lo considere válido y contáctenos.</p>';
