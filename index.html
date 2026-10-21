@@ -59,6 +59,10 @@
   .fotos h3{font-size:15px;color:var(--navy);margin-bottom:10px}
   .f-fila{padding:9px 0;border-bottom:1px solid #E3E7EE}.f-fila:last-child{border-bottom:none}
   .f-fila p{font-size:14px;margin-bottom:6px}.f-fila a{display:inline-block;margin:0 8px 4px 0;font-weight:700;color:var(--blue);text-decoration:underline;cursor:pointer;font-size:14px}
+  /* documentos anexos */
+  .d-it{display:flex;align-items:center;gap:8px;width:100%;margin:0 0 6px;padding:9px 12px;background:#fff;border:1px solid #D5DBE5;border-radius:10px;font:inherit;font-size:14px;font-weight:600;color:var(--navy);text-align:left;cursor:pointer}
+  .d-it span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.d-it small{color:var(--muted);font-weight:500;flex:none}
+  .d-it:hover{border-color:var(--blue)}.f-fila.marca{background:#FFF8E8;border-radius:8px;padding-left:8px;padding-right:8px}
   #galeria{position:fixed;inset:0;z-index:50;background:#0B1A33;color:#fff;display:flex;flex-direction:column}
   #galeria.hidden{display:none}
   .g-top{display:flex;align-items:center;gap:12px;padding:14px 16px;padding-top:calc(14px + env(safe-area-inset-top))}
@@ -202,11 +206,22 @@ function mostrar(doc, k){
     html += '<div class="fotos"><h3>Evidencia fotográfica</h3>' + doc.fotos.map(f => '<div class="f-fila"><p><b>Fila '+f.fila+':</b> '+esc(f.desc||"")+'</p>' +
       f.ids.map((id,j) => '<a data-f="'+f.fila+'" data-i="'+(j+1)+'">img'+String(j+1).padStart(2,"0")+'</a>').join("") + '</div>').join("") + '</div>';
   }
+  if(doc.docs && doc.docs.length && !doc.anulado){
+    const ico = n => /\.pdf$/i.test(n) ? "📄" : /\.(xlsx?|csv)$/i.test(n) ? "📊" : "📝";
+    const peso = b => !b ? "" : b >= 1048576 ? (b/1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b/1024)) + " KB";
+    html += '<div class="fotos" id="docs"><h3>Documentos anexos</h3>' + doc.docs.map(f => '<div class="f-fila" data-fila="'+f.fila+'"><p><b>Fila '+f.fila+':</b> '+esc(f.desc||"")+'</p>' +
+      f.archivos.map((x,j) => '<button class="d-it" data-f="'+f.fila+'" data-j="'+j+'">'+ico(x.nombre)+' <span>'+esc(x.nombre)+'</span><small>'+peso(x.tam)+'</small></button>').join("") + '</div>').join("") + '</div>';
+  }
   if(!doc.anulado) html += '<p class="note">Si los datos mostrados no coinciden con el documento que tiene en mano, no lo considere válido y contáctenos.</p>';
   cont.innerHTML = html;
   cont.querySelectorAll(".fotos a").forEach(a => a.onclick = () => abrirGaleria(doc, k, Number(a.dataset.f), Number(a.dataset.i)));
+  cont.querySelectorAll(".d-it").forEach(b => b.onclick = () => abrirAnexo(k, doc.docs.find(f => f.fila===Number(b.dataset.f)).archivos[Number(b.dataset.j)], b));
   const qp = new URLSearchParams(location.search);
-  if(qp.get("f") && doc.fotos && !doc.anulado) abrirGaleria(doc, k, Number(qp.get("f")), Number(qp.get("i")||1), true);
+  if(qp.get("d") && doc.docs && !doc.anulado){   // enlace «Documentos anexos» del PDF: lleva a los archivos de esa fila
+    const fl = cont.querySelector('#docs .f-fila[data-fila="'+Number(qp.get("f"))+'"]') || cont.querySelector("#docs");
+    if(fl){ fl.classList.add("marca"); setTimeout(() => fl.scrollIntoView({behavior:"smooth", block:"center"}), 300); }
+  }
+  if(qp.get("f") && !qp.get("d") && doc.fotos && !doc.anulado) abrirGaleria(doc, k, Number(qp.get("f")), Number(qp.get("i")||1), true);
   if(doc.pdf && !doc.anulado){
     let url=null;
     const obtener = async () => {
@@ -221,6 +236,19 @@ function mostrar(doc, k){
   }
 }
 
+/* documentos anexos: se descifran aquí; el PDF se abre, Word y Excel se descargan */
+async function abrirAnexo(k, x, btn){
+  const sm = btn.querySelector("small"), antes = sm.textContent; sm.textContent = "Abriendo…";
+  const w = /pdf/.test(x.tipo) ? window.open("", "_blank") : null;
+  try{
+    const r = await fetch("data/"+k.id+"-"+x.id+".bin"); if(!r.ok) throw new Error("no encontrado");
+    const buf = new Uint8Array(await r.arrayBuffer());
+    const u = URL.createObjectURL(new Blob([await descifrar(k.key, buf.slice(0,12), buf.slice(12))], {type:x.tipo}));
+    if(w){ w.location = u; }
+    else { const a = document.createElement("a"); a.href = u; a.download = x.nombre; document.body.appendChild(a); a.click(); a.remove(); }
+    sm.textContent = antes;
+  }catch(e){ if(w) w.close(); sm.textContent = "No se pudo abrir"; }
+}
 /* carrusel de fotos (se abre desde los enlaces img01, img02… del PDF o de esta página) */
 const FOTOS = {};
 async function foto(k, id){
