@@ -170,8 +170,8 @@ function noEncontrado(){
 function mostrar(doc, k){
   document.getElementById("titulo").textContent = "Validación de " + doc.tipo;
   // Recibos y facturas: «recibo oficial» por ahora (sin RUC aún). Cuando haya RUC, la Factura podrá decir «de la factura oficial emitida».
-  const inf = doc.tipo === "Informe técnico";
-  const art = doc.tipo === "Cotización" ? "de la cotización oficial emitida" : inf ? "del informe técnico oficial emitido" : "del recibo oficial emitido";
+  const inf = doc.tipo === "Informe técnico", ec = doc.tipo === "Estado de cuenta";
+  const art = doc.tipo === "Cotización" ? "de la cotización oficial emitida" : inf ? "del informe técnico oficial emitido" : ec ? "del estado de cuenta emitido" : "del recibo oficial emitido";
   document.getElementById("subtitulo").textContent = "Esta pantalla verifica la autenticidad " + art + " por Grupo Σ LEAN.";
   let filas = [["N° de documento", doc.numero],["Cliente", doc.cliente]];
   if(inf){   // informe técnico: sin montos
@@ -182,8 +182,12 @@ function mostrar(doc, k){
   if(doc.ruc) filas.push(["CIP/RUC", doc.ruc]);
   if(doc.cotizacion) filas.push(["Cotización N.º", doc.cotizacion]);
   if(doc.descripcion) filas.push(["Concepto", doc.descripcion]);
-  filas.push([inf ? "Fecha de publicación" : "Fecha de emisión", fmtISO(doc.fecha)]);
-  if(inf) setEstado("p-ok", ICON_OK, "Documento Verificado");
+  if(ec){   // estado de cuenta: solo lo esencial
+    filas.push(["Fecha de corte", fmtISO(doc.fecha)]);
+    if(doc.periodo) filas.push(["Período", doc.periodo]);
+    filas.push(["Documentos incluidos", String(doc.documentos||0)], ["Total facturado", money(doc.facturado||0)], ["Total cobrado", money(doc.cobrado||0)]);
+  } else filas.push([inf ? "Fecha de publicación" : "Fecha de emisión", fmtISO(doc.fecha)]);
+  if(inf || ec) setEstado("p-ok", ICON_OK, "Documento Verificado");
   else if(doc.tipo === "Cotización"){
     if(doc.validoHasta) filas.push(["Válida hasta", fmtISO(doc.validoHasta)]);
     if(doc.validoHasta && new Date() > new Date(doc.validoHasta+"T23:59:59-05:00")) setEstado("p-warn", ICON_WARN, "Auténtica · Vencida");
@@ -201,7 +205,7 @@ function mostrar(doc, k){
   (doc.desglose||[]).forEach(([a,v]) => filas.push([a, money(v)]));
   let html = '<div class="details">' +
     filas.map(([a,v]) => '<div class="row"><span>'+esc(a)+'</span><b>'+esc(v)+'</b></div>').join("") +
-    (inf ? '' : '<div class="row total"><span>Total</span><b>'+money(doc.total)+'</b></div>') +
+    (inf ? '' : '<div class="row total"><span>'+(ec ? 'Saldo pendiente' : 'Total')+'</span><b>'+money(doc.total)+'</b></div>') +
     (doc.saldo!=null ? '<div class="row"><span>Saldo pendiente</span><b>'+money(doc.saldo)+'</b></div>' : '') + '</div>';
   if(doc.anulado) html += '<p class="note" style="color:#b91c1c;font-weight:700">Este documento fue anulado por Grupo Σ LEAN y no tiene validez.</p>';
   if(doc.pdf && !doc.anulado){
