@@ -212,10 +212,18 @@ function mostrar(doc, k){
     html += '<div class="fotos" id="docs"><h3>Anexos</h3>' + doc.docs.map(f => '<div class="f-fila" data-fila="'+f.fila+'"><p><b>'+esc(f.etq || ('Fila '+f.fila))+':</b> '+esc(f.desc||"")+'</p>' +
       f.archivos.map((x,j) => '<button class="d-it" data-f="'+f.fila+'" data-j="'+j+'">'+ico(x.nombre)+' <span>'+esc(x.nombre)+'</span><small>'+peso(x.tam)+'</small></button>').join("") + '</div>').join("") + '</div>';
   }
+  if(doc.reporte && doc.reporte.length && !doc.anulado){   // reporte o propuesta que acompaña a la cotización
+    const nR = doc.reporte.length;
+    html += '<div class="fotos" id="rep"><p style="font-size:15px;margin:0"><b style="color:var(--navy)">Reporte anexado:</b> <a id="rep-link" style="font-weight:700;color:var(--blue);text-decoration:underline;cursor:pointer">' + nR + (nR===1 ? " archivo" : " archivos") + '</a></p>' +
+      '<div id="rep-list" style="margin-top:10px;display:none">' + doc.reporte.map((x,j) => '<button class="d-it" data-r="'+j+'">'+(/\.pdf$/i.test(x.nombre) ? "📄" : /\.(xlsx?|csv)$/i.test(x.nombre) ? "📊" : "📝")+' <span>'+esc(x.nombre)+'</span><small>'+(x.tam >= 1048576 ? (x.tam/1048576).toFixed(1)+" MB" : Math.max(1, Math.round((x.tam||0)/1024))+" KB")+'</small></button>').join("") + '</div></div>';
+  }
   if(!doc.anulado) html += '<p class="note">Si los datos mostrados no coinciden con el documento que tiene en mano, no lo considere válido y contáctenos.</p>';
   cont.innerHTML = html;
   cont.querySelectorAll(".fotos a").forEach(a => a.onclick = () => abrirGaleria(doc, k, Number(a.dataset.f), Number(a.dataset.i)));
-  cont.querySelectorAll(".d-it").forEach(b => b.onclick = () => abrirAnexo(k, doc.docs.find(f => f.fila===Number(b.dataset.f)).archivos[Number(b.dataset.j)], b));
+  cont.querySelectorAll(".d-it[data-f]").forEach(b => b.onclick = () => abrirAnexo(k, doc.docs.find(f => f.fila===Number(b.dataset.f)).archivos[Number(b.dataset.j)], b));
+  cont.querySelectorAll(".d-it[data-r]").forEach(b => b.onclick = () => abrirAnexo(k, doc.reporte[Number(b.dataset.r)], b));
+  const rl = document.getElementById("rep-link");
+  if(rl) rl.onclick = () => { const L = document.getElementById("rep-list"); if(doc.reporte.length === 1){ L.style.display = ""; abrirAnexo(k, doc.reporte[0], L.querySelector(".d-it")); } else L.style.display = L.style.display ? "" : "none"; };
   const qp = new URLSearchParams(location.search);
   if(qp.get("d") && doc.docs && !doc.anulado){   // enlace «Documentos anexos» del PDF: lleva a los archivos de esa fila
     const fl = cont.querySelector('#docs .f-fila[data-fila="'+Number(qp.get("f"))+'"]') || cont.querySelector("#docs");
